@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+
+# Data & Models (Keep your repo lightweight)
+data/*.json
+saved_models/*.pth
+*.db
+
+# IDE
+.vscode/
+.idea/
