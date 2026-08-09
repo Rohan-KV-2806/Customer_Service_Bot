@@ -3,26 +3,24 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.stem.porter import PorterStemmer
 
-nltk.download('punkt')
-nltk.download('punkt_tab')
+# Only download once
+nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)
 
 stemmer = PorterStemmer()
 
-def stem(word):
-    return stemmer.stem(word.lower())
-
 def tokenize(sentence):
+    # Split into words, lowercase them, and chop off punctuation
     tokens = word_tokenize(sentence)
-    return [stem(w) for w in tokens]
+    return [stemmer.stem(w.lower()) for w in tokens if w.isalpha()]
 
-def bag_of_words(sentence, all_words):
-    tokens = tokenize(sentence)
-    
+def bag_of_words(tokenized_sentence, all_words):
+    # Create an array of zeros matching the size of our vocabulary
     bag = np.zeros(len(all_words), dtype=np.float32)
     
+    # For each word in the sentence, if it's in our vocab, change 0 to 1
     for idx, w in enumerate(all_words):
-        if w in tokens:
+        if w in tokenized_sentence:
             bag[idx] = 1.0
             
     return bag
-
