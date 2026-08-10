@@ -3,24 +3,16 @@ responses = {
         "Let me check the status of your order for you.",
         "I can certainly help you track your package.",
         "Please provide your order ID so I can look up the status.",
-        "Your order is currently being processed. Do you need the tracking link?",
-        "I'm checking the delivery status of your order right now.",
-        "To get your order status, please share your 5-digit order number."
     ],
     "Cancel_Order": [
         "I can help you cancel that order. What is the order ID?",
-        "Would you like me to proceed with cancelling this order?",
         "Please confirm the order number you wish to cancel.",
-        "I've initiated the cancellation process. Is there anything else?",
-        "Let me stop that order from shipping right away.",
         "To cancel your order, I just need your order ID."
     ],
     "Return_Refund": [
         "I'm sorry to hear you need a refund. Let's get that processed.",
         "I can issue a refund for you. What is your order number?",
-        "Would you like me to process a refund or a replacement?",
         "Please provide your order ID so I can start the return process.",
-        "I've submitted your refund request to our billing team.",
         "To process your refund, I just need to verify your order details."
     ],
     "Payment_Issue": [
@@ -48,11 +40,6 @@ responses = {
         "I am a virtual agent here to make your experience easier."
     ],
     "Complaint": [
-        "I'm very sorry to hear that. Please tell me more about your issue.",
-        "I apologize for the inconvenience. Let me help resolve this.",
-        "We take complaints seriously. Can you provide more details?",
-        "I'm sorry you had a bad experience. How can I make it right?",
-        "Please accept my apologies. I will do my best to fix this for you.",
-        "I understand your frustration. Let me see what I can do to help."
+        "We take complaints, complements and feedback seriously. Can you provide more details?"
     ]
 }
