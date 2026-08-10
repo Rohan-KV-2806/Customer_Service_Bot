@@ -1,6 +1,6 @@
 # Customer Service Bot
 
-A machine learning project that builds an AI from scratch to understand and categorize customer support messages. Instead of using hard-coded "if/else" rules, this bot uses a PyTorch Neural Network powered by BERT to understand the context of human language.
+An AI-powered intent classification system that analyzes customer support queries and categorizes them into distinct intents. By leveraging transformer-based sentence embeddings, the model understands the semantic meaning of user messages rather than just matching keywords.
 
 ### Tools Used
 * **Python** (Core logic)
