@@ -2,19 +2,13 @@ import json
 import numpy as np
 import torch
 import torch.nn as nn
-import pickle
-import sys
-import os
-
-# Fix path so it finds nltk_utils
-sys.path.append(os.path.abspath('src'))
-
-from nltk_utils import nlp, tfidf, fit_tfidf, get_hybrid_vector
+from nltk_utils import get_sentence_vector
 from model import NeuralNet
 
 # ==========================================
 # STEP 1: LOAD AND PREPARE THE DATA
 # ==========================================
+print("Loading BERT model and encoding sentences... (This might take a minute)")
 
 with open('data/DataSet.json', 'r') as f:
     intents = json.load(f)
@@ -25,22 +19,17 @@ xy = []
 for intent in intents['intents']:
     tag = intent['tag']
     tags.append(tag)
-    
     for pattern in intent['patterns']:
-        xy.append((pattern, tag))
+        # Get the 384-dimensional BERT vector
+        vector = get_sentence_vector(pattern)
+        xy.append((vector, tag))
 
 tags = sorted(set(tags))
 
-# --- FIT THE TF-IDF VECTORIZER ---
-all_sentences = [pattern for pattern, tag in xy]
-fit_tfidf(all_sentences)
-
-# Create the Training Data (X and y)
 X_train = []
 y_train = []
 
-for (sentence, tag) in xy:
-    vector = get_hybrid_vector(sentence, tfidf)
+for (vector, tag) in xy:
     X_train.append(vector)
     label = tags.index(tag)
     y_train.append(label)
@@ -48,18 +37,18 @@ for (sentence, tag) in xy:
 X_train = np.array(X_train)
 y_train = np.array(y_train)
 
-print(f"Total patterns (sentences): {len(X_train)}")
-print(f"Vector size (input neurons): {len(X_train[0])}")
-print(f"Total tags (output neurons): {len(tags)}")
+print(f"Total patterns: {len(X_train)}")
+print(f"Vector size (input neurons): {len(X_train[0])}") # Will print 384
+print(f"Total tags: {len(tags)}")
 
 # ==========================================
 # STEP 2: DEFINE HYPERPARAMETERS
 # ==========================================
-INPUT_SIZE = len(X_train[0])  
-HIDDEN_SIZE = 32              
-OUTPUT_SIZE = len(tags)       
+INPUT_SIZE = 384               # BERT Mini outputs 384 dimensions
+HIDDEN_SIZE = 64               
+OUTPUT_SIZE = len(tags)        
 LEARNING_RATE = 0.001
-EPOCHS = 1500                 
+EPOCHS = 500                   # BERT needs fewer epochs to learn perfectly
 
 # ==========================================
 # STEP 3: SETUP PyTorch
@@ -83,18 +72,12 @@ for epoch in range(EPOCHS):
     loss.backward()
     optimizer.step()
     
-    if (epoch + 1) % 100 == 0:
+    if (epoch + 1) % 50 == 0:
         print(f"Epoch [{epoch+1}/{EPOCHS}], Loss: {loss.item():.4f}")
 
 # ==========================================
-# STEP 5: SAVE THE MODEL AND VECTORIZER
+# STEP 5: SAVE THE MODEL
 # ==========================================
-
-# 1. Save the TF-IDF object to a pickle file
-with open('saved_models/tfidf_vectorizer.pkl', 'wb') as f:
-    pickle.dump(tfidf, f)
-
-# 2. Save the PyTorch model data
 data = {
     "model_state": model.state_dict(),
     "input_size": INPUT_SIZE,
@@ -107,4 +90,3 @@ FILE = "saved_models/trained_model.pth"
 torch.save(data, FILE)
 
 print(f"\nTraining complete. Model saved to {FILE}")
-print("TF-IDF Vectorizer saved to saved_models/tfidf_vectorizer.pkl")

@@ -7,8 +7,6 @@ __pycache__/
 venv/
 env/
 
-# Data & Models (Keep your repo lightweight)
-data/*.json
 saved_models/*.pth
 *.db
 

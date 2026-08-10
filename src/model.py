@@ -8,14 +8,18 @@ class NeuralNet(nn.Module):
         self.l1 = nn.Linear(input_size, hidden_size) 
         self.l2 = nn.Linear(hidden_size, hidden_size) 
         self.l3 = nn.Linear(hidden_size, num_classes) 
+        
         self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.2)
 
     def forward(self, x):
         out = self.l1(x)
         out = self.relu(out)
+        out = self.dropout(out)
         
         out = self.l2(out)
         out = self.relu(out)
+        out = self.dropout(out)
         
         out = self.l3(out)
         return out
