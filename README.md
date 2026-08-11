@@ -6,7 +6,9 @@ An AI-powered intent classification system that analyzes customer support querie
 * **Python** (Core logic)
 * **PyTorch** (Deep Learning framework)
 * **HuggingFace Transformers** (BERT model for sentence embeddings)
-* **Flask** (Backend API)
+* **Flask** (Backend API + Web UI)
+* **HTML/CSS/JS** (Demo web UI)
+* **SQLite** (Demo database)
 * **JSON** (Dataset storage)
 
 ### What It Does
@@ -37,3 +39,8 @@ An AI-powered intent classification system that analyzes customer support querie
    ```bash
    {"sentence": "I need my money back"}
    ```
+7. **Try the demo UI (optional):**
+   ```bash
+   python Demo/app.py
+   ```
+   Open http://localhost:5001 in your browser and log in with `demo` / `demo123` to chat with the bot and try the demo shop.
