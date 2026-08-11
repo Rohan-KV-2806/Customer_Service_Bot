@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PurrMart — Shop</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="brand">🐱 PurrMart</div>
+    <div class="spacer"></div>
+    <div class="nav-links">
+      <a class="nav-link active" href="/dashboard">🛒 Shop</a>
+      <a class="nav-link" href="/support">💬 Support</a>
+      <span class="balance-pill">💰 <span id="balance">$--</span></span>
+      <span class="user-chip"><span class="avatar" id="avatar"></span><span id="username">{{ user.username }}</span></span>
+      <button class="btn btn-ghost" id="logout-btn">Log out</button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="hero">
+      <span class="hero-emoji">🐈</span>
+      <div>
+        <h1>Welcome back, {{ user.username }}!</h1>
+        <p>Treat your feline friend. Every purchase generates a bill with an order number you can use in Support — even for refunds.</p>
+      </div>
+    </div>
+
+    <h2 class="section-title">🛍️ Our Cat Foods</h2>
+    <div class="product-grid" id="products"></div>
+
+    <h2 class="section-title">🧾 Your Orders</h2>
+    <div id="orders-area">
+      <table class="orders-table">
+        <thead>
+          <tr><th>Order #</th><th>Product</th><th>Amount</th><th>Status</th><th>Placed</th></tr>
+        </thead>
+        <tbody id="orders-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Bill modal -->
+  <div class="modal-overlay hidden" id="bill-modal">
+    <div class="modal-card">
+      <div class="modal-emoji">🧾</div>
+      <h2>Order Confirmed! 🎉</h2>
+      <p class="sub">Here is your bill. Keep this order number for Support.</p>
+      <div class="bill">
+        <div class="bill-row"><span class="lbl">Order #</span>
+          <span><span class="order-number" id="bill-order"></span>
+          <button class="copy-btn" id="copy-btn" title="Copy order number">📋</button></span>
+        </div>
+        <div class="bill-row"><span class="lbl">Product</span><span id="bill-product"></span></div>
+        <div class="bill-row"><span class="lbl">Amount paid</span><span id="bill-price"></span></div>
+        <div class="bill-row total"><span>Remaining balance</span><span id="bill-balance"></span></div>
+      </div>
+      <button class="btn btn-primary" id="bill-close">Continue Shopping</button>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const money = (n) => "$" + Number(n).toFixed(2);
+
+    async function api(url, opts = {}) {
+      const res = await fetch(url, opts);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Something went wrong");
+      return data;
+    }
+
+    function toast(msg) {
+      const el = document.createElement("div");
+      el.className = "toast";
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2600);
+    }
+
+    async function refreshBalance() {
+      const me = await api("/api/me");
+      $("balance").textContent = money(me.balance);
+      return me.balance;
+    }
+
+    function renderProducts(products) {
+      const grid = $("products");
+      grid.innerHTML = "";
+      products.forEach((p) => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.innerHTML = `
+          <div class="product-emoji">${p.emoji}</div>
+          <h3 class="product-name">${p.name}</h3>
+          <p class="product-desc">${p.desc}</p>
+          <div class="product-foot">
+            <span class="price">${money(p.price)}</span>
+            <button class="btn btn-primary buy-btn" data-id="${p.id}">Buy</button>
+          </div>`;
+        grid.appendChild(card);
+      });
+      grid.querySelectorAll(".buy-btn").forEach((btn) =>
+        btn.addEventListener("click", () => buy(btn.dataset.id)));
+    }
+
+    async function buy(productId) {
+      try {
+        const bill = await api("/api/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: productId }),
+        });
+        $("bill-order").textContent = bill.order_id;
+        $("bill-product").textContent = bill.product;
+        $("bill-price").textContent = money(bill.price);
+        $("bill-balance").textContent = money(bill.balance);
+        $("bill-modal").classList.remove("hidden");
+        $("balance").textContent = money(bill.balance);
+        loadOrders();
+      } catch (err) {
+        toast("⚠️ " + err.message);
+      }
+    }
+
+    const STATUS = { active: "Active 🚚", refunded: "Refunded 💸", cancelled: "Cancelled ❌" };
+
+    async function loadOrders() {
+      const orders = await api("/api/orders");
+      const body = $("orders-body");
+      if (orders.length === 0) {
+        body.innerHTML = `<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px">
+          No orders yet — grab some cat food above! 🐾</td></tr>`;
+        return;
+      }
+      body.innerHTML = "";
+      orders.forEach((o) => {
+        const tr = document.createElement("tr");
+        const status = STATUS[o.status] || o.status;
+        tr.innerHTML = `
+          <td><b>${o.id}</b></td>
+          <td>${o.product_name}</td>
+          <td>${money(o.price)}</td>
+          <td><span class="status-badge status-${o.status}">${status}</span></td>
+          <td>${o.created_at}</td>`;
+        body.appendChild(tr);
+      });
+    }
+
+    $("bill-close").addEventListener("click", () => $("bill-modal").classList.add("hidden"));
+    $("bill-modal").addEventListener("click", (e) => {
+      if (e.target === $("bill-modal")) $("bill-modal").classList.add("hidden");
+    });
+    $("copy-btn").addEventListener("click", async () => {
+      await navigator.clipboard.writeText($("bill-order").textContent);
+      toast("📋 Order number copied!");
+    });
+    $("logout-btn").addEventListener("click", async () => {
+      await api("/api/logout", { method: "POST" });
+      location.href = "/";
+    });
+
+    // Init
+    const firstLetter = "{{ user.username }}".charAt(0).toUpperCase();
+    $("avatar").textContent = firstLetter;
+    (async () => {
+      try {
+        const [products] = await Promise.all([api("/api/products"), refreshBalance(), loadOrders()]);
+        renderProducts(products);
+      } catch (err) {
+        location.href = "/";
+      }
+    })();
+  </script>
+</body>
+</html>

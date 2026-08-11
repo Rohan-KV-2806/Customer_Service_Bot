@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PurrMart — Customer Support</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="brand">🐱 PurrMart</div>
+    <div class="spacer"></div>
+    <div class="nav-links">
+      <a class="nav-link" href="/dashboard">🛒 Shop</a>
+      <a class="nav-link active" href="/support">💬 Support</a>
+      <span class="balance-pill">💰 <span id="balance">$--</span></span>
+      <span class="user-chip"><span class="avatar" id="avatar"></span><span id="username">{{ user.username }}</span></span>
+      <button class="btn btn-ghost" id="logout-btn">Log out</button>
+    </div>
+  </nav>
+
+  <div class="chat-wrap">
+    <div class="chat-card">
+      <div class="chat-header">
+        <div class="bot-avatar">🐱</div>
+        <div>
+          <div class="name">PurrMart Assistant</div>
+          <div class="status"><span class="dot"></span>AI-powered support</div>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="messages"></div>
+
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Type your message…" autocomplete="off">
+        <button class="btn btn-primary" id="send-btn">Send ➤</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const messagesEl = $("messages");
+    const inputEl = $("chat-input");
+
+    const money = (n) => "$" + Number(n).toFixed(2);
+    const now = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    async function api(url, opts = {}) {
+      const res = await fetch(url, opts);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Something went wrong");
+      return data;
+    }
+
+    function addMessage(text, who, meta = null) {
+      const row = document.createElement("div");
+      row.className = "msg " + who;
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+      if (meta) {
+        const badge = document.createElement("div");
+        badge.className = "intent-badge";
+        badge.innerHTML = `🧠 Intent: <b>${meta.tag}</b> <span class="conf">${meta.confidence}</span>`;
+        bubble.appendChild(badge);
+      }
+      const time = document.createElement("div");
+      time.className = "msg-time";
+      time.textContent = now();
+      row.appendChild(bubble);
+      row.appendChild(time);
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function showTyping() {
+      const el = document.createElement("div");
+      el.className = "typing";
+      el.id = "typing";
+      el.innerHTML = "<span></span><span></span><span></span>";
+      messagesEl.appendChild(el);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function hideTyping() {
+      const el = $("typing");
+      if (el) el.remove();
+    }
+
+    async function send(text) {
+      const message = (text || "").trim();
+      if (!message) return;
+      inputEl.value = "";
+      addMessage(message, "user");
+      showTyping();
+      try {
+        const res = await api("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+        hideTyping();
+        addMessage(res.response, "bot", { tag: res.tag, confidence: res.confidence });
+      } catch (err) {
+        hideTyping();
+        addMessage("⚠️ " + err.message, "bot");
+      }
+    }
+
+    // Events
+    $("send-btn").addEventListener("click", () => send(inputEl.value));
+    inputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") send(inputEl.value); });
+    document.querySelectorAll(".chip").forEach((chip) =>
+      chip.addEventListener("click", () => send(chip.textContent)));
+    $("logout-btn").addEventListener("click", async () => {
+      await api("/api/logout", { method: "POST" });
+      location.href = "/";
+    });
+
+    // Init
+    const firstLetter = "{{ user.username }}".charAt(0).toUpperCase();
+    $("avatar").textContent = firstLetter;
+    addMessage("Hello {{ user.username }}! 👋 I'm PurrMart's AI support assistant. " +
+      "I can check order status, process refunds, and cancel orders. " +
+      "Try one of the quick prompts below!", "bot");
+    api("/api/me").then((me) => { $("balance").textContent = money(me.balance); })
+      .catch(() => location.href = "/");
+  </script>
+</body>
+</html>

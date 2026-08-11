@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PurrMart — Log In</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-body">
+  <div class="auth-card">
+    <div class="brand">🐱 PurrMart</div>
+    <p class="brand-sub">Premium cat food. Every account starts with $3,000 in-app credit.</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="login">Log In</button>
+      <button class="tab" data-tab="signup">Sign Up</button>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <label for="login-username">Username</label>
+      <input type="text" id="login-username" autocomplete="username" placeholder="demo" required>
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••" required>
+      <button type="submit" class="btn btn-primary btn-block">Log In</button>
+      <p class="hint">Demo account: <code>demo</code> / <code>demo123</code></p>
+    </form>
+
+    <form id="signup-form" class="auth-form hidden">
+      <label for="signup-username">Username</label>
+      <input type="text" id="signup-username" autocomplete="username" placeholder="Your name" minlength="3" required>
+      <label for="signup-password">Password</label>
+      <input type="password" id="signup-password" autocomplete="new-password" placeholder="Min 4 characters" minlength="4" required>
+      <button type="submit" class="btn btn-primary btn-block">Create Account (+$3,000)</button>
+    </form>
+
+    <p id="auth-error" class="error hidden"></p>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const errorEl = $("auth-error");
+
+    const showError = (msg) => { errorEl.textContent = msg; errorEl.classList.remove("hidden"); };
+    const hideError = () => errorEl.classList.add("hidden");
+
+    document.querySelectorAll(".tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b === btn));
+        $("login-form").classList.toggle("hidden", btn.dataset.tab !== "login");
+        $("signup-form").classList.toggle("hidden", btn.dataset.tab !== "signup");
+        hideError();
+      });
+    });
+
+    async function post(url, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Something went wrong. Try again.");
+      return data;
+    }
+
+    $("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideError();
+      try {
+        await post("/api/login", {
+          username: $("login-username").value.trim(),
+          password: $("login-password").value,
+        });
+        location.href = "/dashboard";
+      } catch (err) { showError(err.message); }
+    });
+
+    $("signup-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideError();
+      try {
+        await post("/api/signup", {
+          username: $("signup-username").value.trim(),
+          password: $("signup-password").value,
+        });
+        location.href = "/dashboard";
+      } catch (err) { showError(err.message); }
+    });
+  </script>
+</body>
+</html>
