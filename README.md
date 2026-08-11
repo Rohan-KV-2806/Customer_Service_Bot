@@ -1,6 +1,6 @@
 # Customer Service Bot
 
-An AI-powered intent classification system that analyzes customer support queries and categorizes them into distinct intents. By leveraging transformer-based sentence embeddings, the model understands the semantic meaning of user messages rather than just matching keywords.
+AI-Powered E-Commerce Customer Service System that analyzes customer support queries and categorizes them into distinct intents. By leveraging transformer-based sentence embeddings, the model understands the semantic meaning of user messages rather than just matching keywords.
 
 ### Tools Used
 * **Python** (Core logic)
